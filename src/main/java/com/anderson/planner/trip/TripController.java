@@ -10,6 +10,7 @@ import com.anderson.planner.link.LinkResponse;
 import com.anderson.planner.link.LinkService;
 import com.anderson.planner.participant.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +40,12 @@ public class TripController {
     @PostMapping
     public ResponseEntity<TripCreateResponse> createTrip(@RequestBody TripRequestPayload payload) {
         Trip newTrip = new Trip(payload);
+
+        var currentDate = LocalDateTime.now();
+
+        if(currentDate.isAfter(newTrip.getStartsAt())){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
 
         this.repository.save(newTrip);
 
@@ -91,6 +98,12 @@ public class TripController {
 
         if(trip.isPresent()){
             Trip rawtrip = trip.get();
+
+            var dateTime = LocalDateTime.parse(payload.occurs_at(), DateTimeFormatter.ISO_DATE_TIME);
+
+            if(dateTime.isBefore(rawtrip.getStartsAt()) || dateTime.isAfter(rawtrip.getEndsAt())){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
 
             ActivityResponse activityResponse = this.activityService.resgisterActivity(payload, rawtrip);
 
