@@ -1,11 +1,13 @@
 package com.anderson.planner.participant;
 
+import com.anderson.planner.participant.exceptions.ParticipantNotFoundException;
 import com.anderson.planner.trip.Trip;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ParticipantService {
@@ -33,6 +35,15 @@ public class ParticipantService {
     public void triggerConfirmationEmailToParticipant(String email){}
 
     public List<ParticipantData> getAllParticpantsFromEvent(UUID tripId) {
-        return this.repository.findByTripId(tripId).stream().map(participant -> new ParticipantData(participant.getId(), participant.getName(), participant.getEmail(), participant.getIsConfirmed())).toList();
+        List<Participant> participants = this.repository.findByTripId(tripId);
+        if(participants.isEmpty()){
+            throw new ParticipantNotFoundException("This trip has no participants");
+        }
+        return participants.stream()
+                .map(participant -> new ParticipantData(participant.getId(),
+                        participant.getName(),
+                        participant.getEmail(),
+                        participant.getIsConfirmed()))
+                .collect(Collectors.toList());
     }
 }
